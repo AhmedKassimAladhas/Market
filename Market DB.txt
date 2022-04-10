@@ -1,0 +1,113 @@
+Create Table Employees(
+	Number  int primary key,
+	Name Varchar(50),
+	Job Varchar(50),
+	Salary double,
+	Username Varchar(50),
+	Password Varchar(50)
+);
+Create Table Categories(
+	Number int primary key,
+	Section Varchar(100),
+	Category Varchar(100),
+	Price_Buy double,
+	Price_Sale double,
+	Barcode Varchar(100),
+	Expierd_Date Varchar(80),
+	measuring Varchar(50),
+	Count Varchar(100),
+	Notes Varchar(200)
+);
+Create Table Bill(
+	NumberBill int primary key,
+	TimeBill Varchar(80),
+	DateBill Varchar(80),
+	EmpName Varchar(50),
+	Paid double,
+	Discount double,
+	Total double
+);
+Create Table BillLine(
+	NumberLine int primary key,
+	NumberBill int,
+	Section Varchar(50),
+	Category Varchar(50),
+	Count Varchar(100),
+	Price double
+);
+Create Table Sections(
+	Number int primary key,
+	Section Varchar(100)
+);
+Create Table Category(
+	Number int primary key,
+	Category Varchar(100)
+);
+Create Table Expenses(
+	Number int primary key,
+	EmpName Varchar(50),
+	DateExp Varchar(50),
+	TimeExp Varchar(50),
+	Expenses Varchar(100),
+	Price double,
+	Notes Varchar(200)
+);
+
+
+create view AccountsBillLine as select 
+	BillLine.date_today,
+	BillLine.NumberBill ,
+	BillLine.Category,
+	BillLine.measuring,
+	BillLine.count,
+	BillLine.price_buy,
+	BillLine.price_sale,
+	
+	BillLine.count * BillLine.price_buy as 'total_buy',
+	BillLine.count * BillLine.price_sale as 'total_sale',
+		
+	BillLine.count * BillLine.price_sale - BillLine.count * BillLine.price_buy as 'total'
+	from BillLine	
+	
+	
+create view AccountsBill as select
+	Bill.NumberBill,
+	Bill.DateBill,
+	Bill.TimeBill,
+	Bill.EmpName,
+	Bill.total_buyPrice as 'total_buy',
+	Bill.totalbilll,
+	Bill.discount,
+	Bill.total,
+	
+	Bill.totalbilll - Bill.total_buyPrice as 'total_before',
+	Bill.total - Bill.total_buyPrice as 'total_after'
+	from Bill	
+	
+	
+create view  totalexpenses as select 
+	DateExp,
+	sum(Price) as 'price'
+	from expenses
+	GROUP BY DateExp
+	
+create view AccountsDay as 
+	SELECT Bill.DateBill,
+	sum(Bill.total_buyPrice ) as 'total_buy' ,
+	sum(Bill.totalbilll) as 'total_bill',
+	IFNULL(IF( Bill.DateBill != totalexpenses.DateExp, 0, totalexpenses.price), '0') as 'expense' ,
+	sum(Bill.discount) as 'discount',
+	sum(Bill.total )  -  IFNULL(IF( Bill.DateBill != totalexpenses.DateExp, 0, totalexpenses.price), '0')  as 'total',
+	sum(Bill.totalbilll - Bill.total_buyPrice) as 'total_before',
+	sum(Bill.total  - Bill.total_buyPrice)   - IFNULL(IF( Bill.DateBill != totalexpenses.DateExp, 0, totalexpenses.price), '0') as 'total_after'
+	
+	FROM Bill
+	LEFT JOIN  totalexpenses ON Bill.DateBill=totalexpenses.DateExp
+	GROUP BY 	Bill.DateBill
+	
+create view BillDate as SELECT 
+	DATE_FORMAT(`DateBill`,'%M') as date_today,
+	count(bill.NumberBill) AS count 
+	from bill 
+	where DATE_FORMAT(`DateBill`,'%Y') = YEAR(CURDATE())
+	group by DATE_FORMAT(`DateBill`,'%M %Y')	
